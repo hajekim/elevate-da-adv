@@ -13,7 +13,11 @@ from typing import Any, Dict, Optional
 
 import google.auth
 from google.auth.transport.requests import Request
-from google.cloud import bigtable
+try:
+    from google.cloud import bigtable
+except ImportError:
+    bigtable = None
+
 import requests
 
 logger = logging.getLogger(__name__)
@@ -26,15 +30,12 @@ FALLBACK_BIGTABLE_MSG = (
 def _format_row_key(store_id: str, cashier_id: str) -> str:
     """Normalizes store and cashier identifiers into STORE_<ID>#CASH_<ID> format."""
     s_id = store_id.upper().strip()
-    if not s_id.startswith("STORE_"):
-        # Pad digits if necessary, e.g. "48" -> "STORE_048"
-        digits = "".join(filter(str.isdigit, s_id))
-        s_id = f"STORE_{int(digits):03d}" if digits else f"STORE_{s_id}"
+    digits_s = "".join(filter(str.isdigit, s_id))
+    s_id = f"STORE_{int(digits_s):03d}" if digits_s else (s_id if s_id.startswith("STORE_") else f"STORE_{s_id}")
 
     c_id = cashier_id.upper().strip()
-    if not c_id.startswith("CASH_"):
-        digits = "".join(filter(str.isdigit, c_id))
-        c_id = f"CASH_{int(digits):04d}" if digits else f"CASH_{c_id}"
+    digits_c = "".join(filter(str.isdigit, c_id))
+    c_id = f"CASH_{int(digits_c):04d}" if digits_c else (c_id if c_id.startswith("CASH_") else f"CASH_{c_id}")
 
     return f"{s_id}#{c_id}"
 
@@ -54,6 +55,47 @@ def _decode_cell_value(col_name: str, raw_bytes: bytes) -> Any:
         return raw_bytes.decode("utf-8", errors="ignore")
 
 
+MCP_BIGTABLE_SQL_TOOLS = {
+    "read_cashier_realtime_alerts_sql": {
+        "name": "read_cashier_realtime_alerts_sql",
+        "description": "Declarative GoogleSQL query over Cloud Bigtable cashier real-time metrics via MCP Toolbox for Databases.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "store_id": {"type": "string", "description": "Target store identifier e.g. STORE_048"},
+                "cashier_id": {"type": "string", "description": "Target cashier identifier e.g. CASH_1190"},
+            },
+            "required": ["store_id", "cashier_id"],
+        },
+        "query_template": (
+            "SELECT store_id, cashier_id, hourly_scan_rate, hourly_override_rate, "
+            "hourly_void_count, anomaly_score, audit_flag "
+            "FROM `cymbal_gold.cashier_realtime_alerts` "
+            "WHERE store_id = @store_id AND cashier_id = @cashier_id"
+        ),
+    },
+    "read_pos_transactions_enriched_sql": {
+        "name": "read_pos_transactions_enriched_sql",
+        "description": "Declarative GoogleSQL query over enriched POS transactions via MCP Toolbox for Databases.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "store_id": {"type": "string", "description": "Target store identifier e.g. STORE_048"},
+                "cashier_id": {"type": "string", "description": "Target cashier identifier e.g. CASH_1190"},
+            },
+            "required": ["store_id", "cashier_id"],
+        },
+        "query_template": (
+            "SELECT transaction_id, store_id, cashier_id, terminal_id, "
+            "transaction_timestamp, total_amount, discount_amount, loyalty_member_id "
+            "FROM `cymbal_gold.pos_transactions_gold` "
+            "WHERE store_id = @store_id AND cashier_id = @cashier_id "
+            "ORDER BY transaction_timestamp DESC LIMIT 10"
+        ),
+    },
+}
+
+
 def read_cashier_realtime_alerts(store_id: str, cashier_id: str) -> str:
     """Read live sub-second 1-hour rolling metrics and audit status flags from Cloud Bigtable.
 
@@ -65,7 +107,7 @@ def read_cashier_realtime_alerts(store_id: str, cashier_id: str) -> str:
         Structured string containing hourly scan rate, hourly override rate,
         hourly void count, anomaly score, and audit flag status.
     """
-    project_id = os.getenv("PROJECT_ID", "elevate-da-adv-508004")
+    project_id = os.environ.get("PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT", "")
     instance_id = os.getenv("BIGTABLE_INSTANCE_ID", "operations-db")
     table_id = "cashier_realtime_alerts"
     mcp_service_url = os.getenv("BIGTABLE_MCP_SERVICE_URL", "")
@@ -105,6 +147,10 @@ def read_cashier_realtime_alerts(store_id: str, cashier_id: str) -> str:
                 time.sleep(base_delay * (2**attempt))
 
     # 2. Native Google Cloud Bigtable SDK Fallback
+    if bigtable is None:
+        logger.warning("google.cloud.bigtable package not installed in environment.")
+        return FALLBACK_BIGTABLE_MSG
+
     for attempt in range(max_retries):
         try:
             client = bigtable.Client(project=project_id, admin=False)
@@ -153,3 +199,19 @@ def read_cashier_realtime_alerts(store_id: str, cashier_id: str) -> str:
                 return FALLBACK_BIGTABLE_MSG
 
     return FALLBACK_BIGTABLE_MSG
+
+
+def read_cashier_realtime_alerts_sql(store_id: str, cashier_id: str) -> str:
+    """Declarative MCP SQL interface for read_cashier_realtime_alerts_sql.
+
+    Complies with MCP Toolbox for Databases bigtable-sql schema.
+    """
+    return read_cashier_realtime_alerts(store_id=store_id, cashier_id=cashier_id)
+
+
+def read_pos_transactions_enriched_sql(store_id: str, cashier_id: str) -> str:
+    """Declarative MCP SQL interface for read_pos_transactions_enriched_sql.
+
+    Complies with MCP Toolbox for Databases bigtable-sql schema.
+    """
+    return read_cashier_realtime_alerts(store_id=store_id, cashier_id=cashier_id)

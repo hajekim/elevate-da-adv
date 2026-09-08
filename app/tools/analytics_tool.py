@@ -2,17 +2,44 @@
 
 Orchestrates relational analytical queries across structured Gold tables,
 extracted warranty policies, and federated AWS S3 datasets via the BigQuery
-Conversational Data Agent API.
+Conversational Data Agent API and ADK native FunctionTool engine.
 """
 
 import logging
 import os
 import time
-from typing import Any, Dict
+from typing import Any, Callable, Dict, Optional
 
 import google.auth
 from google.auth.transport.requests import Request
 import requests
+
+try:
+    from google.adk.tools import FunctionTool
+    from google.adk.tools.data_agent.data_agent_tool import ask_data_agent
+except ImportError:
+    # Resilient fallback wrapper compliant with ADK 2.0 FunctionTool interface
+    class FunctionTool:  # type: ignore[no-redef]
+        """ADK FunctionTool specification wrapper."""
+
+        def __init__(
+            self,
+            func: Optional[Callable[..., Any]] = None,
+            name: Optional[str] = None,
+            description: Optional[str] = None,
+        ):
+            self.func = func
+            self.name = name or (func.__name__ if func else "cymbal_analytics_tool")
+            self.description = description or (func.__doc__ if func else "")
+
+        def __call__(self, *args: Any, **kwargs: Any) -> Any:
+            if self.func:
+                return self.func(*args, **kwargs)
+            return None
+
+    def ask_data_agent(data_agent_name: str, query: str) -> str:  # type: ignore[no-redef]
+        """Native ADK ask_data_agent execution fallback."""
+        return ""
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +60,7 @@ def cymbal_analytics_tool(query: str) -> str:
         Structured analytical answer including generated SQL and actual query result rows,
         or a fallback message if transient database connectivity fails.
     """
-    project_id = os.getenv("PROJECT_ID", "elevate-da-adv-508004")
+    project_id = os.environ.get("PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT", "")
     agent_id = os.getenv("DATA_AGENT_ID", "cymbal-data-agent")
     # Location override: MUST use 'global' to avoid mTLS endpoint routing errors
     location = os.getenv("DATA_AGENT_LOCATION", "global")
@@ -45,6 +72,15 @@ def cymbal_analytics_tool(query: str) -> str:
 
     for attempt in range(max_retries):
         try:
+            # 1. First attempt execution via native ADK ask_data_agent if available
+            try:
+                native_result = ask_data_agent(data_agent_name=data_agent_name, query=query)
+                if native_result:
+                    return str(native_result)
+            except Exception:
+                pass
+
+            # 2. Resilient authenticated REST fallback to Gemini Data Analytics v1beta
             credentials, _ = google.auth.default(
                 scopes=["https://www.googleapis.com/auth/cloud-platform"]
             )
@@ -95,3 +131,15 @@ def cymbal_analytics_tool(query: str) -> str:
                 return FALLBACK_UNREACHABLE_MSG
 
     return FALLBACK_UNREACHABLE_MSG
+
+
+# Standardize cymbal_analytics_tool on the ADK native FunctionTool wrapper
+cymbal_analytics_function_tool = FunctionTool(
+    func=cymbal_analytics_tool,
+    name="cymbal_analytics_tool",
+    description=(
+        "Queries the Cymbal Retail Analytics BigQuery Conversational Data Agent in natural language. "
+        "Orchestrates relational analytical queries across structured Gold tables, extracted warranty "
+        "policies, and federated AWS S3 datasets via ADK ask_data_agent engine."
+    ),
+)

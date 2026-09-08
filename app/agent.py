@@ -83,6 +83,39 @@ TOOL DISPATCH PROTOCOLS:
 - STRICT GROUNDING: Base every sentence of your final response strictly on the data returned by the invoked tools. Avoid ungrounded introductory or concluding conversational filler.
 """
 
+import datetime
+
+
+def validate_and_update_temporal_cache(session_state: dict, current_date_str: str = None) -> dict:
+    """Validates session state and invalidates cashier cache if on a new calendar day.
+
+    Implements SDD Workflow State Management specification:
+    Automatically invalidates cached top_offender_id if a user's query is received
+    on a new calendar day (session.state.get('top_offender_date') != str(CURRENT_DATE())).
+    """
+    today_str = current_date_str or datetime.date.today().isoformat()
+    cached_date = session_state.get("top_offender_date")
+
+    if cached_date and cached_date != today_str:
+        logger.info(
+            "Temporal cache invalidation: cached date %s != current date %s. Purging top_offender_id.",
+            cached_date,
+            today_str,
+        )
+        session_state["top_offender_id"] = None
+        session_state["top_offender_date"] = today_str
+    elif not cached_date:
+        session_state["top_offender_date"] = today_str
+
+    return session_state
+
+
+def on_turn_start_state_callback(session, *args, **kwargs):
+    """ADK session turn callback enforcing temporal cache invalidation."""
+    if hasattr(session, "state") and isinstance(session.state, dict):
+        validate_and_update_temporal_cache(session.state)
+
+
 retry_options = getattr(types, "HttpRetryOptions", None)
 retry_cfg = retry_options(attempts=3) if retry_options else None
 
@@ -102,7 +135,7 @@ root_agent = Agent(
 
 # BigQuery Agent Analytics Telemetry Plugin
 _plugins = []
-_project_id = os.environ.get("PROJECT_ID", "elevate-da-adv-508004")
+_project_id = os.environ.get("PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT", "")
 _dataset_id = os.environ.get("BQ_TELEMETRY_DATASET", "agent_telemetry")
 _location = os.environ.get("REGION", "us-central1")
 
@@ -112,14 +145,15 @@ try:
         BigQueryLoggerConfig,
     )
 
-    _plugins.append(
-        BigQueryAgentAnalyticsPlugin(
-            project_id=_project_id,
-            dataset_id=_dataset_id,
-            location=_location,
-            config=BigQueryLoggerConfig(),
+    if _project_id:
+        _plugins.append(
+            BigQueryAgentAnalyticsPlugin(
+                project_id=_project_id,
+                dataset_id=_dataset_id,
+                location=_location,
+                config=BigQueryLoggerConfig(),
+            )
         )
-    )
 except ImportError:
     logger.info("BigQueryAgentAnalyticsPlugin not available in environment; skipping telemetry plugin initialization.")
 
@@ -128,3 +162,4 @@ app = App(
     root_agent=root_agent,
     plugins=_plugins,
 )
+

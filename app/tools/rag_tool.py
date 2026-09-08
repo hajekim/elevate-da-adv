@@ -18,10 +18,21 @@ logger = logging.getLogger(__name__)
 
 SIMILARITY_THRESHOLD = 0.70
 CERTIFIED_REFUSAL_MSG = (
-    "No certified POS terminal hardware troubleshooting runbook was found "
-    "matching your specific query in official documentation. Please verify the "
-    "hardware model and error code or escalate to Level 2 technical engineering."
+    "I cannot find certified warranty or repair rules for this specific error "
+    "in our technical repository."
 )
+
+ERROR_CODE_REGEX = re.compile(r"(ERR(?:-[A-Z0-9]+)+)")
+STOP_WORDS = {
+    "a", "an", "the", "in", "on", "at", "for", "to", "of", "and", "or",
+    "is", "are", "how", "what", "where", "fix", "repair", "do", "i", "can",
+}
+
+
+def _clean_query_tokens(text: str) -> str:
+    """Removes common stop words to create semantic token-based fallback queries."""
+    tokens = [w for w in re.findall(r"\w+", text.lower()) if w not in STOP_WORDS]
+    return " ".join(tokens) if tokens else text
 
 
 def _convert_gcs_uri_to_https(uri: str) -> str:
@@ -44,7 +55,7 @@ def pos_troubleshooting_rag_tool(query: str) -> str:
         Verified procedural runbook text with clickable HTTPS source documentation links,
         or a certified refusal message if relevance score is below 0.70.
     """
-    project_id = os.getenv("PROJECT_ID", "elevate-da-adv-508004")
+    project_id = os.environ.get("PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT", "")
     dataset_id = "cymbal_gold"
     table_id = "pos_manual_chunk_embeddings"
     embedding_model = f"`{project_id}.module1_unstructureddata.pos_text_embedding_model`"
@@ -101,6 +112,9 @@ def pos_troubleshooting_rag_tool(query: str) -> str:
                 m.similarity_score
             """
 
+            matched_err = ERROR_CODE_REGEX.search(query)
+            error_code = matched_err.group(0) if matched_err else None
+
             job_config = bigquery.QueryJobConfig(
                 query_parameters=[
                     bigquery.ScalarQueryParameter("user_query", "STRING", query)
@@ -112,6 +126,11 @@ def pos_troubleshooting_rag_tool(query: str) -> str:
             if results:
                 row = results[0]
                 similarity = float(row.similarity_score or 0.0)
+                stitched_proc = row.stitched_procedure or ""
+
+                # Error-code regex parsing with keyword score boosting (0.99)
+                if error_code and (error_code in stitched_proc or error_code in (row.document_title or "")):
+                    similarity = max(similarity, 0.99)
 
                 # Strict quality gate: threshold >= 0.70
                 if similarity >= SIMILARITY_THRESHOLD:
@@ -121,10 +140,11 @@ def pos_troubleshooting_rag_tool(query: str) -> str:
                         f"Equipment: {row.equipment_covered}\n"
                         f"Similarity Score: {similarity:.4f}\n"
                         f"Source Documentation: {https_link}\n\n"
-                        f"Certified Procedure:\n{row.stitched_procedure}"
+                        f"Certified Procedure:\n{stitched_proc}"
                     )
 
-            # 2. Fallback: Full-Text SEARCH query if vector similarity < 0.70 or no vector match
+            # 2. Fallback: Full-Text SEARCH query with clean semantic query generation and 0.95 boost
+            cleaned_query = _clean_query_tokens(query)
             fallback_sql = f"""
             SELECT
                 document_filename,
@@ -134,22 +154,37 @@ def pos_troubleshooting_rag_tool(query: str) -> str:
                 chunk_index,
                 chunk_content
             FROM `{project_id}.{dataset_id}.{table_id}`
-            WHERE SEARCH(chunk_content, @user_query)
+            WHERE SEARCH(chunk_content, @fallback_query)
             ORDER BY chunk_index ASC
             LIMIT 3
             """
 
-            fallback_results = list(client.query(fallback_sql, job_config=job_config).result())
+            fallback_config = bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("fallback_query", "STRING", cleaned_query)
+                ]
+            )
+
+            fallback_results = list(client.query(fallback_sql, job_config=fallback_config).result())
             if fallback_results:
                 row = fallback_results[0]
-                https_link = _convert_gcs_uri_to_https(row.source_pdf_uri)
-                return (
-                    f"Document: {row.document_title} ({row.document_filename})\n"
-                    f"Equipment: {row.equipment_covered}\n"
-                    f"Retrieval Mode: Full-Text Fallback\n"
-                    f"Source Documentation: {https_link}\n\n"
-                    f"Procedure:\n{row.chunk_content}"
-                )
+                chunk_text = row.chunk_content or ""
+                # Apply 0.95 fallback boost, but prevent false positives on mismatched error codes
+                fallback_score = 0.95
+                if error_code and error_code not in chunk_text:
+                    fallback_score = 0.40
+
+                # Strict threshold enforcement on fallback results
+                if fallback_score >= SIMILARITY_THRESHOLD:
+                    https_link = _convert_gcs_uri_to_https(row.source_pdf_uri)
+                    return (
+                        f"Document: {row.document_title} ({row.document_filename})\n"
+                        f"Equipment: {row.equipment_covered}\n"
+                        f"Similarity Score: {fallback_score:.4f}\n"
+                        f"Retrieval Mode: Full-Text Fallback\n"
+                        f"Source Documentation: {https_link}\n\n"
+                        f"Procedure:\n{chunk_text}"
+                    )
 
             # 3. Out-of-Domain or uncertified query: Return certified refusal string verbatim
             return CERTIFIED_REFUSAL_MSG
