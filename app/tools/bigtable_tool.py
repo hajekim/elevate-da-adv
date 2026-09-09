@@ -165,12 +165,17 @@ def read_pos_transactions_enriched_sql(store_id: str, cashier_id: str) -> str:
     return read_cashier_realtime_alerts(store_id, cashier_id)
 
 
-def read_cashier_realtime_alerts(store_id: str, cashier_id: str) -> str:
+def read_cashier_realtime_alerts(
+    store_id: Optional[str] = None,
+    cashier_id: Optional[str] = None,
+    row_key_prefix: Optional[str] = None,
+) -> str:
     """Read live sub-second 1-hour rolling metrics and audit status flags from Cloud Bigtable.
 
     Args:
-        store_id: Store identifier (e.g. 'STORE_048' or '48').
+        store_id: Store identifier (e.g. 'STORE_048' or '48'). Defaults to 'STORE_048' if omitted.
         cashier_id: Cashier identifier (e.g. 'CASH_1190' or '1190').
+        row_key_prefix: Optional row key prefix formatted as 'STORE_<ID>#CASH_<ID>'.
 
     Returns:
         Structured telemetry string containing audit status, override counts/rates,
@@ -180,6 +185,18 @@ def read_cashier_realtime_alerts(store_id: str, cashier_id: str) -> str:
     instance_id = os.getenv("BIGTABLE_INSTANCE_ID", "operations-db")
     table_id = "cashier_realtime_alerts"
     mcp_service_url = os.getenv("BIGTABLE_MCP_SERVICE_URL", "").rstrip("/")
+
+    if row_key_prefix and "#" in row_key_prefix:
+        parts = row_key_prefix.split("#")
+        store_id = parts[0]
+        cashier_id = parts[1]
+    elif not store_id and cashier_id:
+        store_id = "STORE_048"
+    elif not cashier_id and store_id:
+        cashier_id = "CASH_1190"
+    elif not store_id and not cashier_id:
+        store_id = "STORE_048"
+        cashier_id = "CASH_1190"
 
     s_canonical, c_canonical, row_key_prefix = _format_identifiers(store_id, cashier_id)
 

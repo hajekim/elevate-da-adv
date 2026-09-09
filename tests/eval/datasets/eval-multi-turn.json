@@ -14,18 +14,20 @@
       "context": "Real-time Bigtable lookup for store 48 cashier 1190",
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "function_call": {
-                "name": "read_cashier_realtime_alerts",
-                "args": {
-                  "store_id": "STORE_048",
-                  "cashier_id": "CASH_1190"
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "function_call": {
+                  "name": "read_cashier_realtime_alerts",
+                  "args": {
+                    "store_id": "STORE_048",
+                    "cashier_id": "CASH_1190"
+                  }
                 }
               }
-            }
-          ]
+            ]
+          }
         }
       ],
       "agent_data": {
@@ -181,17 +183,19 @@
       "context": "Context retention routing to BigQuery Data Agent preserving store 48 and cashier 1190 context",
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "function_call": {
-                "name": "cymbal_analytics_tool",
-                "args": {
-                  "query": "Compare Cashier CASH_1190's live manual override rate to their 7-day historical override baseline."
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "function_call": {
+                  "name": "cymbal_analytics_tool",
+                  "args": {
+                    "query": "Compare Cashier CASH_1190's live manual override rate to their 7-day historical override baseline."
+                  }
                 }
               }
-            }
-          ]
+            ]
+          }
         }
       ],
       "agent_data": {
@@ -347,17 +351,19 @@
       "context": "BigQuery inventory gold ledger analysis",
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "function_call": {
-                "name": "cymbal_analytics_tool",
-                "args": {
-                  "query": "Which inventory items in Store 12 have less than 20 hours of cover remaining?"
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "function_call": {
+                  "name": "cymbal_analytics_tool",
+                  "args": {
+                    "query": "Which inventory items in Store 12 have less than 20 hours of cover remaining?"
+                  }
                 }
               }
-            }
-          ]
+            ]
+          }
         }
       ],
       "agent_data": {
@@ -513,17 +519,19 @@
       "context": "Intent switching to BigQuery Vector Search RAG for Diebold Nixdorf POS printer error",
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "function_call": {
-                "name": "pos_troubleshooting_rag_tool",
-                "args": {
-                  "query": "ERR-DN-PRNT-24V thermal printer cutter lock Diebold Nixdorf"
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "function_call": {
+                  "name": "pos_troubleshooting_rag_tool",
+                  "args": {
+                    "query": "ERR-DN-PRNT-24V thermal printer cutter lock Diebold Nixdorf"
+                  }
                 }
               }
-            }
-          ]
+            ]
+          }
         }
       ],
       "agent_data": {
@@ -679,12 +687,14 @@
       "context": "Query optimization guardrail enforcing partitioned date range clarification",
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "text": "To ensure query efficiency and avoid unnecessary full-table scans over large transaction partitions, please specify a transaction date or date range (for example, today, the last 7 days, or a specific date format YYYY-MM-DD)."
-            }
-          ]
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "To ensure query efficiency and avoid unnecessary full-table scans over large transaction partitions, please specify a transaction date or date range (for example, today, the last 7 days, or a specific date format YYYY-MM-DD)."
+              }
+            ]
+          }
         }
       ],
       "agent_data": {
@@ -840,17 +850,19 @@
       "context": "Partitioned query execution through BigQuery Data Agent",
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "function_call": {
-                "name": "cymbal_analytics_tool",
-                "args": {
-                  "query": "Show all POS transactions with refund voids for date 2026-03-12."
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "function_call": {
+                  "name": "cymbal_analytics_tool",
+                  "args": {
+                    "query": "Show all POS transactions with refund voids for date 2026-03-12."
+                  }
                 }
               }
-            }
-          ]
+            ]
+          }
         }
       ],
       "agent_data": {
@@ -1006,17 +1018,19 @@
       "context": "Enforcing Dataplex policy tag masking XXXX-XXXX-XXXX-1234",
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "function_call": {
-                "name": "cymbal_analytics_tool",
-                "args": {
-                  "query": "Check the payment method and card number used in transaction TXN-20260312-0015811."
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "function_call": {
+                  "name": "cymbal_analytics_tool",
+                  "args": {
+                    "query": "Check the payment method and card number used in transaction TXN-20260312-0015811."
+                  }
                 }
               }
-            }
-          ]
+            ]
+          }
         }
       ],
       "agent_data": {
@@ -1172,17 +1186,19 @@
       "context": "Hardware safety refusal guardrail",
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "function_call": {
-                "name": "pos_troubleshooting_rag_tool",
-                "args": {
-                  "query": "replace hydraulic brake pads Caterpillar forklift"
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "function_call": {
+                  "name": "pos_troubleshooting_rag_tool",
+                  "args": {
+                    "query": "replace hydraulic brake pads Caterpillar forklift"
+                  }
                 }
               }
-            }
-          ]
+            ]
+          }
         }
       ],
       "agent_data": {
@@ -1338,17 +1354,19 @@
       "context": "Cross-cloud AWS S3 federated Iceberg query edge case testing partition drift tolerance",
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "function_call": {
-                "name": "cymbal_analytics_tool",
-                "args": {
-                  "query": "Audit promo overrides for CASH_1190 and pull checkout logs from AWS S3 for 2026-03-01."
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "function_call": {
+                  "name": "cymbal_analytics_tool",
+                  "args": {
+                    "query": "Audit promo overrides for CASH_1190 and pull checkout logs from AWS S3 for 2026-03-01."
+                  }
                 }
               }
-            }
-          ]
+            ]
+          }
         }
       ],
       "agent_data": {
@@ -1508,18 +1526,20 @@
       },
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "function_call": {
-                "name": "read_cashier_realtime_alerts",
-                "args": {
-                  "store_id": "STORE_048",
-                  "cashier_id": "CASH_1190"
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "function_call": {
+                  "name": "read_cashier_realtime_alerts",
+                  "args": {
+                    "store_id": "STORE_048",
+                    "cashier_id": "CASH_1190"
+                  }
                 }
               }
-            }
-          ]
+            ]
+          }
         }
       ],
       "agent_data": {

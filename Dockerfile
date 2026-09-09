@@ -31,5 +31,5 @@ USER appuser
 
 EXPOSE 8080
 
-# Run coordinator agent
-CMD ["python3", "-m", "app.agent"]
+# Run coordinator agent FastAPI server
+CMD ["uvicorn", "app.fast_api_app:app", "--host", "0.0.0.0", "--port", "8080"]

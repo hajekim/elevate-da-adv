@@ -17,8 +17,11 @@ ENV/
 *.log
 .system_generated/
 eval_results/
+artifacts/
+deployment/
 
 # Distribution / packaging
 build/
 dist/
 *.egg-info/
+

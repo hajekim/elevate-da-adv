@@ -14,17 +14,19 @@
       "context": "POS Hardware Runbook BigQuery Vector Search and Adjacent Chunk Stitching",
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "function_call": {
-                "name": "pos_troubleshooting_rag_tool",
-                "args": {
-                  "query": "ERR-PAY-4001 EMV contactless payment freeze double charge"
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "function_call": {
+                  "name": "pos_troubleshooting_rag_tool",
+                  "args": {
+                    "query": "ERR-PAY-4001 EMV contactless payment freeze double charge"
+                  }
                 }
               }
-            }
-          ]
+            ]
+          }
         }
       ],
       "agent_data": {
@@ -180,17 +182,19 @@
       "context": "POS Terminal Troubleshooting Manual in BigQuery Vector Embeddings",
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "function_call": {
-                "name": "pos_troubleshooting_rag_tool",
-                "args": {
-                  "query": "ERR-DN-PRNT-24V thermal printer cutter lock Diebold Nixdorf"
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "function_call": {
+                  "name": "pos_troubleshooting_rag_tool",
+                  "args": {
+                    "query": "ERR-DN-PRNT-24V thermal printer cutter lock Diebold Nixdorf"
+                  }
                 }
               }
-            }
-          ]
+            ]
+          }
         }
       ],
       "agent_data": {
@@ -346,17 +350,19 @@
       "context": "Safety Guardrail refusing out-of-scope non-retail hardware repair queries",
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "function_call": {
-                "name": "pos_troubleshooting_rag_tool",
-                "args": {
-                  "query": "replace engine oil Ford F-150 truck"
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "function_call": {
+                  "name": "pos_troubleshooting_rag_tool",
+                  "args": {
+                    "query": "replace engine oil Ford F-150 truck"
+                  }
                 }
               }
-            }
-          ]
+            ]
+          }
         }
       ],
       "agent_data": {
@@ -512,17 +518,19 @@
       "context": "Inventory Reconciliation Gold Ledger in BigQuery",
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "function_call": {
-                "name": "cymbal_analytics_tool",
-                "args": {
-                  "query": "What is the estimated cover hours remaining for store inventory positions experiencing stockout risk of less than 20 hours, and what is their total on-hand inventory?"
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "function_call": {
+                  "name": "cymbal_analytics_tool",
+                  "args": {
+                    "query": "What is the estimated cover hours remaining for store inventory positions experiencing stockout risk of less than 20 hours, and what is their total on-hand inventory?"
+                  }
                 }
               }
-            }
-          ]
+            ]
+          }
         }
       ],
       "agent_data": {
@@ -678,17 +686,19 @@
       "context": "POS Transactions Gold Ledger in BigQuery via Conversational Data Agent",
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "function_call": {
-                "name": "cymbal_analytics_tool",
-                "args": {
-                  "query": "What is the Net Transaction Revenue for Store 8 today?"
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "function_call": {
+                  "name": "cymbal_analytics_tool",
+                  "args": {
+                    "query": "What is the Net Transaction Revenue for Store 8 today?"
+                  }
                 }
               }
-            }
-          ]
+            ]
+          }
         }
       ],
       "agent_data": {
@@ -844,18 +854,20 @@
       "context": "Cloud Bigtable operations-db cashier_realtime_alerts table lookup",
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "function_call": {
-                "name": "read_cashier_realtime_alerts",
-                "args": {
-                  "store_id": "STORE_048",
-                  "cashier_id": "CASH_1190"
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "function_call": {
+                  "name": "read_cashier_realtime_alerts",
+                  "args": {
+                    "store_id": "STORE_048",
+                    "cashier_id": "CASH_1190"
+                  }
                 }
               }
-            }
-          ]
+            ]
+          }
         }
       ],
       "agent_data": {
@@ -1011,17 +1023,19 @@
       "context": "Cross-modal join of transactions and extracted warranty documentation in BigQuery",
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "function_call": {
-                "name": "cymbal_analytics_tool",
-                "args": {
-                  "query": "Check transaction details for TXN-20260312-0015811 and show the warranty coverage policy for the purchased item."
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "function_call": {
+                  "name": "cymbal_analytics_tool",
+                  "args": {
+                    "query": "Check transaction details for TXN-20260312-0015811 and show the warranty coverage policy for the purchased item."
+                  }
                 }
               }
-            }
-          ]
+            ]
+          }
         }
       ],
       "agent_data": {
@@ -1177,26 +1191,28 @@
       "context": "Parallel tool dispatch invoking Bigtable MCP and BigQuery Data Agent concurrently",
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "function_call": {
-                "name": "read_cashier_realtime_alerts",
-                "args": {
-                  "store_id": "STORE_048",
-                  "cashier_id": "CASH_1190"
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "function_call": {
+                  "name": "read_cashier_realtime_alerts",
+                  "args": {
+                    "store_id": "STORE_048",
+                    "cashier_id": "CASH_1190"
+                  }
+                }
+              },
+              {
+                "function_call": {
+                  "name": "cymbal_analytics_tool",
+                  "args": {
+                    "query": "Calculate Cashier CASH_1190's 7-day historical override baseline."
+                  }
                 }
               }
-            },
-            {
-              "function_call": {
-                "name": "cymbal_analytics_tool",
-                "args": {
-                  "query": "Calculate Cashier CASH_1190's 7-day historical override baseline."
-                }
-              }
-            }
-          ]
+            ]
+          }
         }
       ],
       "agent_data": {
@@ -1352,17 +1368,19 @@
       "context": "Sequential multi-turn dispatch querying BigQuery anomaly alerts then AWS S3 BigLake Iceberg table",
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "function_call": {
-                "name": "cymbal_analytics_tool",
-                "args": {
-                  "query": "Show cashiers with active cashier promo abuse alerts in the last 7 days."
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "function_call": {
+                  "name": "cymbal_analytics_tool",
+                  "args": {
+                    "query": "Show cashiers with active cashier promo abuse alerts in the last 7 days."
+                  }
                 }
               }
-            }
-          ]
+            ]
+          }
         }
       ],
       "agent_data": {
@@ -1518,17 +1536,19 @@
       "context": "Dataplex Policy Tags and dynamic column masking in BigQuery gold ledger",
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "function_call": {
-                "name": "cymbal_analytics_tool",
-                "args": {
-                  "query": "Retrieve customer payment details for transaction TXN-20260312-0015811 ensuring credit card numbers are masked."
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "function_call": {
+                  "name": "cymbal_analytics_tool",
+                  "args": {
+                    "query": "Retrieve customer payment details for transaction TXN-20260312-0015811 ensuring credit card numbers are masked."
+                  }
                 }
               }
-            }
-          ]
+            ]
+          }
         }
       ],
       "agent_data": {
@@ -1684,17 +1704,19 @@
       "context": "Cross-cloud AWS S3 federated Iceberg query edge case testing partition drift tolerance",
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "function_call": {
-                "name": "cymbal_analytics_tool",
-                "args": {
-                  "query": "Audit promo overrides for CASH_1190 and pull checkout logs from AWS S3 for 2026-03-01."
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "function_call": {
+                  "name": "cymbal_analytics_tool",
+                  "args": {
+                    "query": "Audit promo overrides for CASH_1190 and pull checkout logs from AWS S3 for 2026-03-01."
+                  }
                 }
               }
-            }
-          ]
+            ]
+          }
         }
       ],
       "agent_data": {
@@ -1854,18 +1876,20 @@
       },
       "responses": [
         {
-          "role": "model",
-          "parts": [
-            {
-              "function_call": {
-                "name": "read_cashier_realtime_alerts",
-                "args": {
-                  "store_id": "STORE_048",
-                  "cashier_id": "CASH_1190"
+          "response": {
+            "role": "model",
+            "parts": [
+              {
+                "function_call": {
+                  "name": "read_cashier_realtime_alerts",
+                  "args": {
+                    "store_id": "STORE_048",
+                    "cashier_id": "CASH_1190"
+                  }
                 }
               }
-            }
-          ]
+            ]
+          }
         }
       ],
       "agent_data": {
