@@ -113,6 +113,7 @@ class TestPosRagTool(unittest.TestCase):
 
         mock_row = MagicMock()
         mock_row.similarity_score = 0.65  # Below 0.70 initially
+        mock_row.chunk_content = "Resolution steps for ERR-PAY-4001: reset PIN pad terminal."
         mock_row.stitched_procedure = "Resolution steps for ERR-PAY-4001: reset PIN pad terminal."
         mock_row.document_title = "Payment Terminal Runbook"
         mock_row.document_filename = "pinpad.pdf"
@@ -132,34 +133,41 @@ class TestPosRagTool(unittest.TestCase):
 class TestCymbalAnalyticsTool(unittest.TestCase):
     """Test suite for BigQuery Conversational Data Agent analytics tool."""
 
-    @patch("google.auth.default")
-    @patch("requests.post")
-    def test_analytics_tool_success(self, mock_post, mock_auth):
+    @patch("app.tools.analytics_tool.ask_data_agent")
+    def test_analytics_tool_success(self, mock_ask):
         """Verifies successful analytics query execution."""
-        mock_creds = MagicMock()
-        mock_creds.token = "fake-token"
-        mock_auth.return_value = (mock_creds, "mock-project")
-
-        mock_resp = MagicMock()
-        mock_resp.status_code = 200
-        mock_resp.json.return_value = {
-            "sql_query": "SELECT SUM(net_amount) FROM cymbal_gold.pos_transactions_gold",
-            "results": [{"total_revenue": 154200.50}],
+        mock_ask.return_value = {
+            "status": "SUCCESS",
+            "response": [
+                {
+                    "text": {
+                        "parts": ["Total daily revenue for STORE_008 is $154,200.50."],
+                        "textType": "FINAL_RESPONSE",
+                    }
+                },
+                {
+                    "data": {
+                        "generatedSql": "SELECT SUM(net_amount) AS total_revenue FROM cymbal_gold.pos_transactions_gold WHERE store_id = 'STORE_008'"
+                    }
+                },
+                {
+                    "Data Retrieved": {
+                        "headers": ["total_revenue"],
+                        "rows": [[154200.50]],
+                        "summary": "Showing 1 row.",
+                    }
+                },
+            ],
         }
-        mock_post.return_value = mock_resp
 
         res = cymbal_analytics_tool("STORE_008 total daily revenue")
         self.assertIn("total_revenue", res)
+        self.assertIn("154200.5", res)
 
-    @patch("google.auth.default")
-    @patch("requests.post")
-    def test_analytics_tool_fallback_on_unreachable(self, mock_post, mock_auth):
+    @patch("app.tools.analytics_tool.ask_data_agent")
+    def test_analytics_tool_fallback_on_unreachable(self, mock_ask):
         """Verifies graceful fallback message when remote endpoint is unreachable."""
-        mock_creds = MagicMock()
-        mock_creds.token = "fake-token"
-        mock_auth.return_value = (mock_creds, "mock-project")
-
-        mock_post.side_effect = Exception("Connection timed out")
+        mock_ask.side_effect = Exception("Connection timed out")
         res = cymbal_analytics_tool("any retail query")
         self.assertEqual(res, FALLBACK_UNREACHABLE_MSG)
 
@@ -196,6 +204,7 @@ class TestBigtableTelemetryTool(unittest.TestCase):
         self.assertIn("store_id", tool_def["parameters"]["required"])
         self.assertIn("cashier_id", tool_def["parameters"]["required"])
 
+    @patch.dict("os.environ", {"BIGTABLE_MCP_SERVICE_URL": ""})
     @patch("app.tools.bigtable_tool.bigtable")
     def test_read_cashier_realtime_alerts_direct_sdk_mock(self, mock_bt_module):
         """Verifies direct SDK fallback parsing."""
@@ -209,6 +218,7 @@ class TestBigtableTelemetryTool(unittest.TestCase):
 
         # Simulate row returned
         mock_row = MagicMock()
+        mock_row.row_key = b"STORE_048#CASH_1190#99999"
         rate_bytes = struct.pack(">d", 0.35)
         void_bytes = struct.pack(">q", 8)
         mock_cell_rate = MagicMock()

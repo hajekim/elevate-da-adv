@@ -23,6 +23,11 @@ Orchestrates 3 decoupled tool gateways:
 import logging
 import os
 
+from dotenv import load_dotenv
+
+# Ensure environment variables from .env take precedence
+load_dotenv(override=True)
+
 try:
     from google.adk.agents import Agent
     from google.adk.apps import App

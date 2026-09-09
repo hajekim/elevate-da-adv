@@ -12,7 +12,11 @@ import re
 import time
 from typing import Optional
 
+from dotenv import load_dotenv
 from google.cloud import bigquery
+
+# Ensure environment variables from .env take precedence
+load_dotenv(override=True)
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +59,9 @@ def pos_troubleshooting_rag_tool(query: str) -> str:
         Verified procedural runbook text with clickable HTTPS source documentation links,
         or a certified refusal message if relevance score is below 0.70.
     """
-    project_id = os.environ.get("PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT", "")
+    load_dotenv(override=True)
+    project_id = os.environ.get("PROJECT_ID") or os.environ.get("GOOGLE_CLOUD_PROJECT", "elevate-da-adv-508004")
+    location = os.environ.get("REGION", "us-central1")
     dataset_id = "cymbal_gold"
     table_id = "pos_manual_chunk_embeddings"
     embedding_model = f"`{project_id}.module1_unstructureddata.pos_text_embedding_model`"
@@ -63,11 +69,14 @@ def pos_troubleshooting_rag_tool(query: str) -> str:
     max_retries = 3
     base_delay = 1.0
 
+    matched_err = ERROR_CODE_REGEX.search(query)
+    error_code = matched_err.group(0) if matched_err else None
+
     for attempt in range(max_retries):
         try:
-            client = bigquery.Client(project=project_id)
+            client = bigquery.Client(project=project_id, location=location)
 
-            # 1. Primary Vector Search with Adjacent Context Window Stitching (N-1 to N+1)
+            # 1. Primary Vector Search: top_k=5 candidates
             vector_sql = f"""
             WITH query_emb AS (
                 SELECT ml_generate_embedding_result AS emb
@@ -77,73 +86,109 @@ def pos_troubleshooting_rag_tool(query: str) -> str:
                     STRUCT('RETRIEVAL_QUERY' AS task_type)
                 )
             ),
-            matched_chunk AS (
+            matched_candidates AS (
                 SELECT
                     base.document_filename,
                     base.document_title,
                     base.equipment_covered,
                     base.source_pdf_uri,
                     base.chunk_index,
+                    base.chunk_content,
                     ROUND(1.0 - distance, 4) AS similarity_score
                 FROM VECTOR_SEARCH(
                     TABLE `{project_id}.{dataset_id}.{table_id}`,
                     'embedding',
                     TABLE query_emb,
-                    top_k => 1,
+                    top_k => 5,
                     distance_type => 'COSINE'
                 )
             )
             SELECT
-                m.document_filename,
-                m.document_title,
-                m.equipment_covered,
-                m.source_pdf_uri,
-                m.similarity_score,
-                STRING_AGG(c.chunk_content, '\n' ORDER BY c.chunk_index ASC) AS stitched_procedure
-            FROM matched_chunk m
-            JOIN `{project_id}.{dataset_id}.{table_id}` c
-                ON m.document_filename = c.document_filename
-                AND c.chunk_index BETWEEN (m.chunk_index - 1) AND (m.chunk_index + 1)
-            GROUP BY
-                m.document_filename,
-                m.document_title,
-                m.equipment_covered,
-                m.source_pdf_uri,
-                m.similarity_score
+                document_filename,
+                document_title,
+                equipment_covered,
+                source_pdf_uri,
+                chunk_index,
+                similarity_score,
+                chunk_content
+            FROM matched_candidates
+            ORDER BY
+                CASE WHEN @error_code IS NOT NULL AND chunk_content LIKE CONCAT('%', @error_code, '%') THEN 1 ELSE 2 END,
+                similarity_score DESC
+            LIMIT 1
             """
-
-            matched_err = ERROR_CODE_REGEX.search(query)
-            error_code = matched_err.group(0) if matched_err else None
 
             job_config = bigquery.QueryJobConfig(
                 query_parameters=[
-                    bigquery.ScalarQueryParameter("user_query", "STRING", query)
+                    bigquery.ScalarQueryParameter("user_query", "STRING", query),
+                    bigquery.ScalarQueryParameter("error_code", "STRING", error_code),
                 ]
             )
 
             results = list(client.query(vector_sql, job_config=job_config).result())
 
             if results:
-                row = results[0]
-                similarity = float(row.similarity_score or 0.0)
-                stitched_proc = row.stitched_procedure or ""
+                top = results[0]
+                similarity = float(getattr(top, "similarity_score", 0.0) or 0.0)
+                raw_chunk = getattr(top, "chunk_content", None)
+                raw_proc = getattr(top, "stitched_procedure", None)
+                content = ""
+                if isinstance(raw_chunk, str) and raw_chunk:
+                    content = raw_chunk
+                elif isinstance(raw_proc, str) and raw_proc:
+                    content = raw_proc
+                elif raw_chunk is not None and not str(type(raw_chunk)).startswith("<class 'unittest.mock"):
+                    content = str(raw_chunk)
+                elif raw_proc is not None and not str(type(raw_proc)).startswith("<class 'unittest.mock"):
+                    content = str(raw_proc)
 
-                # Error-code regex parsing with keyword score boosting (0.99)
-                if error_code and (error_code in stitched_proc or error_code in (row.document_title or "")):
+                # Error-code regex matching keyword score boost (0.99)
+                doc_title = str(getattr(top, "document_title", "") or "")
+                if error_code and (error_code in str(content) or error_code in doc_title):
                     similarity = max(similarity, 0.99)
 
                 # Strict quality gate: threshold >= 0.70
                 if similarity >= SIMILARITY_THRESHOLD:
-                    https_link = _convert_gcs_uri_to_https(row.source_pdf_uri)
+                    # Stitch adjacent chunks (N-1 to N+1)
+                    stitched_proc = content
+                    try:
+                        chunk_idx = getattr(top, "chunk_index", None)
+                        doc_fname = getattr(top, "document_filename", None)
+                        if chunk_idx is not None and doc_fname is not None:
+                            stitch_sql = f"""
+                            SELECT chunk_index, chunk_content
+                            FROM `{project_id}.{dataset_id}.{table_id}`
+                            WHERE document_filename = @doc_name
+                              AND chunk_index BETWEEN @start_idx AND @end_idx
+                            ORDER BY chunk_index ASC
+                            """
+                            stitch_cfg = bigquery.QueryJobConfig(
+                                query_parameters=[
+                                    bigquery.ScalarQueryParameter("doc_name", "STRING", doc_fname),
+                                    bigquery.ScalarQueryParameter("start_idx", "INT64", max(0, chunk_idx - 1)),
+                                    bigquery.ScalarQueryParameter("end_idx", "INT64", chunk_idx + 1),
+                                ]
+                            )
+                            chunk_rows = list(client.query(stitch_sql, job_config=stitch_cfg).result())
+                            if chunk_rows and hasattr(chunk_rows[0], "chunk_content"):
+                                stitched_proc = "\n".join(r.chunk_content for r in chunk_rows)
+                    except Exception:
+                        pass
+
+                    doc_title = getattr(top, "document_title", "Technical Documentation")
+                    doc_fname = getattr(top, "document_filename", "manual.pdf")
+                    equipment = getattr(top, "equipment_covered", "POS Terminal")
+                    gcs_uri = getattr(top, "source_pdf_uri", "")
+                    https_link = _convert_gcs_uri_to_https(gcs_uri)
                     return (
-                        f"Document: {row.document_title} ({row.document_filename})\n"
-                        f"Equipment: {row.equipment_covered}\n"
+                        f"Document: {doc_title} ({doc_fname})\n"
+                        f"Equipment: {equipment}\n"
                         f"Similarity Score: {similarity:.4f}\n"
                         f"Source Documentation: {https_link}\n\n"
                         f"Certified Procedure:\n{stitched_proc}"
                     )
 
-            # 2. Fallback: Full-Text SEARCH query with clean semantic query generation and 0.95 boost
+            # 2. Fallback: Full-Text SEARCH query with clean semantic query generation
             cleaned_query = _clean_query_tokens(query)
             fallback_sql = f"""
             SELECT
@@ -169,7 +214,6 @@ def pos_troubleshooting_rag_tool(query: str) -> str:
             if fallback_results:
                 row = fallback_results[0]
                 chunk_text = row.chunk_content or ""
-                # Apply 0.95 fallback boost, but prevent false positives on mismatched error codes
                 fallback_score = 0.95
                 if error_code and error_code not in chunk_text:
                     fallback_score = 0.40

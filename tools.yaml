@@ -1,0 +1,42 @@
+kind: source
+name: operations-db
+type: bigtable
+project: elevate-da-adv-508004
+instance: operations-db
+---
+kind: tool
+name: read_cashier_realtime_alerts
+type: bigtable-sql
+source: operations-db
+description: Read live 1-hour rolling metrics and audit status flags for a cashier from Cloud Bigtable.
+parameters:
+  - name: store_id
+    type: string
+    description: Store identifier e.g. STORE_048
+  - name: cashier_id
+    type: string
+    description: Cashier identifier e.g. CASH_1190
+statement: |
+  SELECT
+    CAST(_key AS STRING) as row_key,
+    CAST(flags['audit_status'] AS STRING) as audit_status,
+    TO_INT64(stats['cashier_1h_txn_count']) as cashier_1h_txn_count,
+    TO_INT64(stats['cashier_1h_manual_override_count']) as cashier_1h_manual_override_count,
+    TO_INT64(stats['cashier_1h_promo_count']) as cashier_1h_promo_count,
+    TO_FLOAT64(stats['cashier_1h_promo_rate']) as cashier_1h_promo_rate,
+    TO_FLOAT64(stats['cashier_1h_avg_discount_pct']) as cashier_1h_avg_discount_pct,
+    TO_FLOAT64(stats['cashier_1h_total_discount_usd']) as cashier_1h_total_discount_usd,
+    TO_FLOAT64(stats['risk_score']) as risk_score,
+    CAST(stats['last_event_ts'] AS STRING) as last_event_ts
+  FROM
+    cashier_realtime_alerts
+  WHERE
+    _key LIKE CAST(CONCAT(@store_id, '#', @cashier_id, '%') AS BYTES)
+  ORDER BY
+    _key DESC
+  LIMIT 1;
+---
+kind: toolset
+name: bigtable_mcp_toolset
+tools:
+  - read_cashier_realtime_alerts
