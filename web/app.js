@@ -108,10 +108,64 @@ const SCENARIOS = [
   }
 ];
 
+// Domain Preset Metadata & Dynamic Starters Matrix
+const FILTER_CONFIGS = {
+  auto: {
+    name: 'Auto Orchestrator',
+    placeholder: 'Enter operational inquiry (e.g. stockout risks, hardware errors, or cashier audit)...',
+    starters: [
+      { label: '🛠️ ERR-PAY-4001 SOP', prompt: 'What is the immediate field recovery protocol when a cashier encounters an ERR-PAY-4001 EMV contactless payment freeze, and how do we ensure the customer is not double-charged?' },
+      { label: '🚫 F-150 Oil (Refusal)', prompt: 'How do I replace the engine oil on a Ford F-150 truck?' },
+      { label: '📦 Stockout Risk (<20h)', prompt: 'Which high-velocity SKU has less than 20 hours of inventory remaining, and what is its estimated stockout time?' },
+      { label: '⏱️ CASH_1190 Real-Time', prompt: 'Fetch the real-time 1-hour rolling metrics for cashier CASH_1190 at store STORE_048.' },
+      { label: '🛡️ Lifetime Warranty', prompt: 'Does our store return policy provide a lifetime replacement guarantee on power tools, and what is the maximum refund without manager approval?' },
+      { label: '⚡ Dual Cashier Baseline', prompt: "Compare cashier CASH_1190's live discount metrics against their historical 7-day baseline to evaluate promo abuse risk." },
+      { label: '🌐 Cross-Cloud Promo Audit', prompt: 'Identify the cashier with the highest anomaly alerts in GCP, and cross-reference their transaction logs in AWS S3.' }
+    ]
+  },
+  analytics: {
+    name: 'BigQuery Analytics Agent',
+    placeholder: 'Query BigQuery Gold Marts, inventory ledger, or store sales performance...',
+    starters: [
+      { label: '📦 Stockout Risk (<20h)', prompt: 'Which high-velocity SKU has less than 20 hours of inventory remaining, and what is its estimated stockout time?' },
+      { label: '🛡️ Lifetime Warranty Policy', prompt: 'Does our store return policy provide a lifetime replacement guarantee on power tools, and what is the maximum refund without manager approval?' },
+      { label: '📊 7-Day Cashier Baseline', prompt: 'Analyze 7-day historical discount metrics and transaction averages for cashier CASH_1190 in Gold Mart.' }
+    ]
+  },
+  rag: {
+    name: 'POS Runbook RAG',
+    placeholder: 'Search POS hardware runbooks, error codes, and certified maintenance SOPs...',
+    starters: [
+      { label: '🛠️ ERR-PAY-4001 EMV SOP', prompt: 'What is the immediate field recovery protocol when a cashier encounters an ERR-PAY-4001 EMV contactless payment freeze, and how do we ensure the customer is not double-charged?' },
+      { label: '🚫 Ford F-150 Oil (Refusal)', prompt: 'How do I replace the engine oil on a Ford F-150 truck?' },
+      { label: '📘 POS Hardware Manual Search', prompt: 'What are the recovery steps for POS terminal hardware communication errors in retail store SOP?' }
+    ]
+  },
+  bigtable: {
+    name: 'Bigtable Live Telemetry',
+    placeholder: 'Fetch sub-second 1-hour rolling cashier telemetry and anomaly risk scores from Bigtable...',
+    starters: [
+      { label: '⏱️ CASH_1190 Real-Time Metrics', prompt: 'Fetch the real-time 1-hour rolling metrics for cashier CASH_1190 at store STORE_048.' },
+      { label: '🚨 CASH_1024 Live Telemetry', prompt: 'Fetch the real-time 1-hour rolling metrics for cashier CASH_1024 at store STORE_048.' },
+      { label: '📈 Cashier Real-Time Overrides', prompt: 'Retrieve the latest 1-hour discount override volume and anomaly risk score for cashier CASH_1190.' }
+    ]
+  },
+  audit: {
+    name: 'Cross-Cloud Loss Prevention Audit',
+    placeholder: 'Conduct cross-cloud promo abuse and cashier anomaly investigations across GCP and AWS S3...',
+    starters: [
+      { label: '🌐 Cross-Cloud Promo Audit', prompt: 'Identify the cashier with the highest anomaly alerts in GCP, and cross-reference their transaction logs in AWS S3.' },
+      { label: '⚡ Dual Cashier Baseline', prompt: "Compare cashier CASH_1190's live discount metrics against their historical 7-day baseline to evaluate promo abuse risk." },
+      { label: '🔍 Cashier Anomaly Investigation', prompt: 'Investigate cashier CASH_1190 for potential promo abuse by correlating real-time discounts with historical trends.' }
+    ]
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   if (window.lucide) {
     window.lucide.createIcons();
   }
+  setAgentFilter('auto');
   renderMatrixTable();
 });
 
@@ -182,7 +236,7 @@ function switchRightTab(tabName) {
   }
 }
 
-// Agent Filter Selection
+// Agent / Domain Filter Selection
 function setAgentFilter(filter) {
   agentFilter = filter;
   const filters = ['auto', 'analytics', 'rag', 'bigtable', 'audit'];
@@ -197,6 +251,42 @@ function setAgentFilter(filter) {
       }
     }
   });
+
+  const config = FILTER_CONFIGS[filter] || FILTER_CONFIGS.auto;
+  const input = document.getElementById('prompt-input');
+  if (input) {
+    input.placeholder = config.placeholder;
+  }
+
+  renderStarterChips(filter);
+}
+
+// Render Starter Chips dynamically for the active filter
+function renderStarterChips(filter) {
+  const container = document.getElementById('quick-starters');
+  if (!container) return;
+
+  const config = FILTER_CONFIGS[filter] || FILTER_CONFIGS.auto;
+  const starters = config.starters || [];
+
+  let html = `
+    <span class="text-slate-400 font-medium text-[11px] whitespace-nowrap flex items-center gap-1">
+      <i data-lucide="zap" class="w-3 h-3 text-amber-500"></i> Starters:
+    </span>
+  `;
+
+  starters.forEach((s, idx) => {
+    html += `
+      <button onclick="useStarter('${filter}', ${idx})" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-blue-400 hover:text-blue-600 whitespace-nowrap shadow-2xs transition text-[11px]">
+        ${escapeHtml(s.label)}
+      </button>
+    `;
+  });
+
+  container.innerHTML = html;
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 }
 
 // Start Fresh Conversation Session
@@ -253,11 +343,25 @@ async function startNewSession() {
   }
 }
 
-// Starter Prompt Handler
-function useStarter(idx) {
-  if (SCENARIOS[idx]) {
+// Starter Prompt Handler (Safe Index-based lookup)
+function useStarter(filterOrIdx, idx) {
+  let promptText = '';
+  if (typeof filterOrIdx === 'string' && idx !== undefined) {
+    const config = FILTER_CONFIGS[filterOrIdx];
+    if (config && config.starters && config.starters[idx]) {
+      promptText = config.starters[idx].prompt;
+    }
+  } else if (typeof filterOrIdx === 'number') {
+    if (SCENARIOS[filterOrIdx]) {
+      promptText = SCENARIOS[filterOrIdx].prompt;
+    }
+  } else if (typeof filterOrIdx === 'string') {
+    promptText = filterOrIdx;
+  }
+
+  if (promptText) {
     const input = document.getElementById('prompt-input');
-    input.value = SCENARIOS[idx].prompt;
+    input.value = promptText;
     autoResize(input);
     if (currentView !== 'chat') {
       switchView('chat');

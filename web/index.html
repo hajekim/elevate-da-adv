@@ -180,32 +180,9 @@
 
         </div>
 
-        <!-- Quick Starter Prompts Bar -->
-        <div class="p-2.5 border-t border-slate-100 bg-slate-50 flex items-center gap-1.5 overflow-x-auto text-xs custom-scrollbar">
-          <span class="text-slate-400 font-medium text-[11px] whitespace-nowrap flex items-center gap-1">
-            <i data-lucide="zap" class="w-3 h-3 text-amber-500"></i> Starters:
-          </span>
-          <button onclick="useStarter(0)" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-blue-400 hover:text-blue-600 whitespace-nowrap shadow-2xs transition text-[11px]">
-            🛠️ ERR-PAY-4001 SOP
-          </button>
-          <button onclick="useStarter(1)" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-rose-400 hover:text-rose-600 whitespace-nowrap shadow-2xs transition text-[11px]">
-            🚫 F-150 Oil (Refusal)
-          </button>
-          <button onclick="useStarter(2)" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-amber-400 hover:text-amber-600 whitespace-nowrap shadow-2xs transition text-[11px]">
-            📦 Stockout Risk (&lt;20h)
-          </button>
-          <button onclick="useStarter(3)" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-purple-400 hover:text-purple-600 whitespace-nowrap shadow-2xs transition text-[11px]">
-            ⏱️ CASH_1190 Real-Time
-          </button>
-          <button onclick="useStarter(4)" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-blue-400 hover:text-blue-600 whitespace-nowrap shadow-2xs transition text-[11px]">
-            🛡️ Lifetime Warranty
-          </button>
-          <button onclick="useStarter(5)" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-indigo-400 hover:text-indigo-600 whitespace-nowrap shadow-2xs transition text-[11px]">
-            ⚡ Dual Cashier Baseline
-          </button>
-          <button onclick="useStarter(6)" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-emerald-400 hover:text-emerald-600 whitespace-nowrap shadow-2xs transition text-[11px]">
-            🌐 Cross-Cloud Promo Audit
-          </button>
+        <!-- Quick Starter Prompts Bar (Dynamic per Domain Filter) -->
+        <div id="quick-starters" class="p-2.5 border-t border-slate-100 bg-slate-50 flex items-center gap-1.5 overflow-x-auto text-xs custom-scrollbar">
+          <!-- Dynamically populated by renderStarterChips() -->
         </div>
 
         <!-- Message Input Box -->
