@@ -28,6 +28,18 @@ class TestStudioEndpoints(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(app)
 
+    def test_root_serves_studio_html(self):
+        """Verifies that / directly serves the Operations Studio HTML interface."""
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Cymbal Retail Operations Studio", response.text)
+
+    def test_root_serves_app_js(self):
+        """Verifies that /app.js directly serves the application script."""
+        response = self.client.get("/app.js")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("SCENARIOS", response.text)
+
     def test_studio_static_html(self):
         """Verifies that /studio/ serves the English HTML studio interface."""
         response = self.client.get("/studio/")

@@ -72,9 +72,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
 
 
-app: FastAPI = get_fast_api_app(
+app:FastAPI = get_fast_api_app(
     agents_dir=AGENT_DIR,
-    web=True,
+    web=False,
     artifact_service_uri=services.ARTIFACT_SERVICE_URI,
     allow_origins=allow_origins,
     session_service_uri=services.SESSION_SERVICE_URI,
@@ -114,7 +114,7 @@ import uuid
 from typing import Any, Dict, List, Optional
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from starlette.responses import RedirectResponse
+from starlette.responses import FileResponse, RedirectResponse
 from google.genai import types
 
 class StudioChatRequest(BaseModel):
@@ -126,6 +126,16 @@ class StudioChatRequest(BaseModel):
 web_dir = os.path.join(AGENT_DIR, "web")
 if os.path.isdir(web_dir):
     app.mount("/studio", StaticFiles(directory=web_dir, html=True), name="studio")
+
+
+@app.get("/")
+async def root_index():
+    return FileResponse(os.path.join(web_dir, "index.html"))
+
+
+@app.get("/app.js")
+async def root_app_js():
+    return FileResponse(os.path.join(web_dir, "app.js"))
 
 
 @app.get("/studio")
