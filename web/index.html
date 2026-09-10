@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cymbal Retail Operations Studio | Google Cloud ADK</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Marked for Markdown -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- Plotly.js -->
+  <script src="https://cdn.plot.ly/plotly-2.29.1.min.js"></script>
+  <!-- Google Inter & JetBrains Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    }
+    pre, code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #F1F5F9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94A3B8;
+    }
+    .chat-bubble {
+      animation: fadeIn 0.2s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .prose code {
+      background-color: #F1F5F9;
+      color: #0F172A;
+      padding: 0.15rem 0.35rem;
+      border-radius: 0.25rem;
+      font-size: 0.825em;
+    }
+    .prose pre {
+      background-color: #0F172A;
+      color: #E2E8F0;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      overflow-x: auto;
+    }
+    .prose pre code {
+      background-color: transparent;
+      color: inherit;
+      padding: 0;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
+
+  <!-- Top Navigation Header -->
+  <header class="bg-white border-b border-slate-200 px-6 py-2.5 flex items-center justify-between shadow-xs z-20">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-sm">
+        <i data-lucide="store" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-bold text-base text-slate-900 leading-tight">Cymbal Retail Operations Studio</h1>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold border border-blue-200 uppercase tracking-wide">ADK 2.0 Engine</span>
+        </div>
+        <p class="text-[11px] text-slate-500 leading-tight">Autonomous Multi-Tool Store Operations & Loss Prevention</p>
+      </div>
+    </div>
+
+    <!-- Navigation View Tabs -->
+    <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-medium">
+      <button onclick="switchView('chat')" id="nav-btn-chat" class="px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition bg-white text-blue-700 shadow-xs font-semibold">
+        <i data-lucide="message-square" class="w-3.5 h-3.5"></i> <span>Operations Studio</span>
+      </button>
+      <button onclick="switchView('arch')" id="nav-btn-arch" class="px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition text-slate-600 hover:text-slate-900 font-semibold">
+        <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> <span>Architecture & Gateways</span>
+      </button>
+      <button onclick="switchView('matrix')" id="nav-btn-matrix" class="px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition text-slate-600 hover:text-slate-900 font-semibold">
+        <i data-lucide="check-check" class="w-3.5 h-3.5"></i> <span>Operational Test Matrix</span>
+      </button>
+    </div>
+
+    <!-- System Status Badges -->
+    <div class="flex items-center gap-2">
+      <span class="flex items-center gap-1.5 text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg font-medium">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span>ADK Runner Active</span>
+      </span>
+      <span class="hidden md:flex items-center gap-1 text-[11px] bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-1 rounded-lg font-mono">
+        <i data-lucide="database" class="w-3 h-3 text-blue-500"></i>
+        <span>BigQuery + Bigtable</span>
+      </span>
+    </div>
+  </header>
+
+  <!-- Main Workspace Area -->
+  <main class="flex-1 flex overflow-hidden relative">
+
+    <!-- VIEW 1: Split-Pane Operations Studio -->
+    <div id="view-chat" class="w-full h-full flex flex-row">
+
+      <!-- Left Pane: Agent Chat & Dispatch Controller (50%) -->
+      <section class="w-1/2 flex flex-col bg-white border-r border-slate-200 h-full">
+        
+        <!-- Agent Mode Selector & Session Bar -->
+        <div class="px-3 py-2 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-1 overflow-x-auto text-xs font-medium custom-scrollbar">
+            <button onclick="setAgentFilter('auto')" id="filter-auto" title="Automatic Intent Classification & Dispatch" class="px-2 py-1 rounded-lg border flex items-center gap-1 transition bg-blue-600 text-white border-blue-600 shadow-xs whitespace-nowrap text-[11px]">
+              <i data-lucide="sparkles" class="w-3 h-3 text-white"></i> Auto Orchestrator
+            </button>
+            <button onclick="setAgentFilter('analytics')" id="filter-analytics" title="BigQuery Conversational Data Agent" class="px-2 py-1 rounded-lg border border-slate-200 text-slate-600 bg-white hover:bg-slate-100 flex items-center gap-1 transition whitespace-nowrap text-[11px]">
+              <i data-lucide="database" class="w-3 h-3 text-blue-600"></i> BQ Analytics
+            </button>
+            <button onclick="setAgentFilter('rag')" id="filter-rag" title="POS Hardware Manual Vector Search & SOP" class="px-2 py-1 rounded-lg border border-slate-200 text-slate-600 bg-white hover:bg-slate-100 flex items-center gap-1 transition whitespace-nowrap text-[11px]">
+              <i data-lucide="book-open" class="w-3 h-3 text-amber-500"></i> POS Runbook RAG
+            </button>
+            <button onclick="setAgentFilter('bigtable')" id="filter-bigtable" title="Cloud Bigtable Real-Time Cashier Telemetry" class="px-2 py-1 rounded-lg border border-slate-200 text-slate-600 bg-white hover:bg-slate-100 flex items-center gap-1 transition whitespace-nowrap text-[11px]">
+              <i data-lucide="activity" class="w-3 h-3 text-purple-600"></i> Bigtable Live
+            </button>
+            <button onclick="setAgentFilter('audit')" id="filter-audit" title="Cross-Cloud Loss Prevention Audit" class="px-2 py-1 rounded-lg border border-slate-200 text-slate-600 bg-white hover:bg-slate-100 flex items-center gap-1 transition whitespace-nowrap text-[11px]">
+              <i data-lucide="shield-alert" class="w-3 h-3 text-emerald-600"></i> Cross-Cloud Audit
+            </button>
+          </div>
+
+          <!-- Session Controls -->
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <div id="session-badge" class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-mono border border-slate-200 flex items-center gap-1 whitespace-nowrap">
+              <i data-lucide="hash" class="w-3 h-3 text-indigo-500"></i>
+              <span id="session-id-label">default</span>
+            </div>
+            <button onclick="startNewSession()" id="new-session-btn" title="Reset session memory bank" class="px-2 py-0.5 rounded-md border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[11px] font-semibold flex items-center gap-1 transition whitespace-nowrap">
+              <i data-lucide="plus-circle" class="w-3 h-3"></i> <span>New Session</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Chat Conversation Messages Container -->
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+          
+          <!-- Welcome Message Bubble -->
+          <div class="flex items-start gap-3 chat-bubble">
+            <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white flex-shrink-0 shadow-xs">
+              <i data-lucide="bot" class="w-4 h-4"></i>
+            </div>
+            <div class="bg-slate-100 p-4 rounded-2xl rounded-tl-none max-w-[90%] text-sm text-slate-800 shadow-xs leading-relaxed">
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="font-bold text-slate-900">Cymbal Retail Operations Coordinator</span>
+                <span class="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-mono font-medium">Ready</span>
+              </div>
+              <p class="mb-2 text-slate-700">
+                Welcome to the Cymbal Retail Operations Studio. I orchestrate 3 production gateways to deliver grounded enterprise intelligence:
+              </p>
+              <ul class="text-xs space-y-1 text-slate-600 list-disc list-inside mb-3">
+                <li><strong>BigQuery Conversational Agent</strong>: Relational analytics across Gold sales, inventory ledger, and federated AWS S3 tables.</li>
+                <li><strong>POS Troubleshooting RAG</strong>: BigQuery vector similarity search with adjacent context stitching over certified hardware manuals.</li>
+                <li><strong>Cloud Bigtable Telemetry</strong>: Sub-second 1-hour rolling metrics and anomaly risk scores via Cloud Run MCP microservice.</li>
+              </ul>
+              <div class="text-[11px] bg-white p-2 rounded-lg border border-slate-200 text-slate-500 flex items-center gap-1.5">
+                <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-500 flex-shrink-0"></i>
+                <span>Tip: Click any starter chip below to execute the 7 verified operational scenarios instantly.</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Quick Starter Prompts Bar -->
+        <div class="p-2.5 border-t border-slate-100 bg-slate-50 flex items-center gap-1.5 overflow-x-auto text-xs custom-scrollbar">
+          <span class="text-slate-400 font-medium text-[11px] whitespace-nowrap flex items-center gap-1">
+            <i data-lucide="zap" class="w-3 h-3 text-amber-500"></i> Starters:
+          </span>
+          <button onclick="useStarter(0)" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-blue-400 hover:text-blue-600 whitespace-nowrap shadow-2xs transition text-[11px]">
+            🛠️ ERR-PAY-4001 SOP
+          </button>
+          <button onclick="useStarter(1)" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-rose-400 hover:text-rose-600 whitespace-nowrap shadow-2xs transition text-[11px]">
+            🚫 F-150 Oil (Refusal)
+          </button>
+          <button onclick="useStarter(2)" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-amber-400 hover:text-amber-600 whitespace-nowrap shadow-2xs transition text-[11px]">
+            📦 Stockout Risk (&lt;20h)
+          </button>
+          <button onclick="useStarter(3)" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-purple-400 hover:text-purple-600 whitespace-nowrap shadow-2xs transition text-[11px]">
+            ⏱️ CASH_1190 Real-Time
+          </button>
+          <button onclick="useStarter(4)" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-blue-400 hover:text-blue-600 whitespace-nowrap shadow-2xs transition text-[11px]">
+            🛡️ Lifetime Warranty
+          </button>
+          <button onclick="useStarter(5)" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-indigo-400 hover:text-indigo-600 whitespace-nowrap shadow-2xs transition text-[11px]">
+            ⚡ Dual Cashier Baseline
+          </button>
+          <button onclick="useStarter(6)" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-emerald-400 hover:text-emerald-600 whitespace-nowrap shadow-2xs transition text-[11px]">
+            🌐 Cross-Cloud Promo Audit
+          </button>
+        </div>
+
+        <!-- Message Input Box -->
+        <div class="p-3 border-t border-slate-200 bg-white">
+          <div class="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition">
+            <textarea id="prompt-input" rows="1" placeholder="Enter operational inquiry (e.g. stockout risks, hardware errors, or cashier audit)..." class="flex-1 bg-transparent text-sm text-slate-800 placeholder-slate-400 focus:outline-none resize-none max-h-32 custom-scrollbar py-0.5 leading-relaxed" onkeydown="handleKeyDown(event)" oninput="autoResize(this)"></textarea>
+            
+            <button onclick="submitMessage()" id="send-btn" class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 shadow-xs">
+              <i data-lucide="arrow-up" class="w-4 h-4" id="send-icon"></i>
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Right Pane: Inspector, Visualizer & Multi-Tool Trace (50%) -->
+      <section class="w-1/2 flex flex-col bg-slate-50 h-full overflow-hidden">
+        
+        <!-- Right Header with 4 Tabs -->
+        <div class="px-4 py-2 border-b border-slate-200 bg-white flex items-center justify-between shadow-2xs">
+          <div class="flex items-center gap-1 text-xs font-semibold">
+            <button onclick="switchRightTab('sql')" id="rtab-btn-sql" class="px-3 py-1.5 rounded-lg flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 transition">
+              <i data-lucide="code" class="w-3.5 h-3.5"></i> <span>GoogleSQL</span>
+            </button>
+            <button onclick="switchRightTab('chart')" id="rtab-btn-chart" class="px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-slate-600 hover:text-slate-900 border border-transparent transition">
+              <i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i> <span>Visualizer</span>
+            </button>
+            <button onclick="switchRightTab('sop')" id="rtab-btn-sop" class="px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-slate-600 hover:text-slate-900 border border-transparent transition">
+              <i data-lucide="file-text" class="w-3.5 h-3.5"></i> <span>Hardware SOPs</span>
+            </button>
+            <button onclick="switchRightTab('trace')" id="rtab-btn-trace" class="px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-slate-600 hover:text-slate-900 border border-transparent transition">
+              <i data-lucide="layers" class="w-3.5 h-3.5"></i> <span>ADK Tool Trace</span>
+            </button>
+          </div>
+          <div id="status-chip" class="text-[11px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 font-mono">
+            Idle
+          </div>
+        </div>
+
+        <!-- Right Content Panels -->
+        <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
+          
+          <!-- TAB 1: GoogleSQL & Query Inspector -->
+          <div id="rtab-content-sql" class="space-y-4">
+            
+            <!-- SQL Viewer Card -->
+            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                  <i data-lucide="database" class="w-3.5 h-3.5 text-blue-500"></i> Generated GoogleSQL Query
+                </span>
+                <button onclick="copySQL()" id="copy-sql-btn" class="text-xs text-slate-500 hover:text-blue-600 flex items-center gap-1 transition">
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i> <span>Copy SQL</span>
+                </button>
+              </div>
+              <pre id="sql-code-display" class="bg-slate-900 text-sky-300 p-3 rounded-lg text-xs font-mono overflow-x-auto leading-relaxed custom-scrollbar max-h-72">-- Generated GoogleSQL queries will appear here automatically when BigQuery or Bigtable tools are invoked.</pre>
+            </div>
+
+            <!-- Target Data Layer Card -->
+            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+              <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                <i data-lucide="layers" class="w-3.5 h-3.5 text-indigo-500"></i> Grounded Schemas & Tables
+              </h3>
+              <div id="tables-list" class="grid grid-cols-2 gap-2 text-xs">
+                <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                  <div class="font-mono font-semibold text-slate-800 text-[11px]">pos_transactions_gold</div>
+                  <div class="text-[10px] text-slate-500">Curated Gold Sales & Line Items</div>
+                </div>
+                <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                  <div class="font-mono font-semibold text-slate-800 text-[11px]">pos_anomaly_alerts</div>
+                  <div class="text-[10px] text-slate-500">BigQuery Continuous Queries Sinks</div>
+                </div>
+                <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                  <div class="font-mono font-semibold text-slate-800 text-[11px]">silver_pos_transactions</div>
+                  <div class="text-[10px] text-slate-500">Federated AWS S3 Omni Table</div>
+                </div>
+                <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                  <div class="font-mono font-semibold text-slate-800 text-[11px]">pos_manual_chunk_embeddings</div>
+                  <div class="text-[10px] text-slate-500">368 BigQuery Vector Embeddings</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- TAB 2: Operational Visualizer (Plotly) -->
+          <div id="rtab-content-chart" class="space-y-4 hidden">
+            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                  <i data-lucide="bar-chart-2" class="w-3.5 h-3.5 text-emerald-500"></i> Operational Performance Visualizer
+                </span>
+                <span id="chart-type-badge" class="text-[10px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">Interactive</span>
+              </div>
+              <div id="plotly-container" class="w-full h-80 flex items-center justify-center text-slate-400 text-xs">
+                Run an operational query (e.g. Stockout Risk or Cashier Baseline) to render interactive metrics.
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: POS Hardware SOPs & Runbooks -->
+          <div id="rtab-content-sop" class="space-y-4 hidden">
+            
+            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                  <i data-lucide="wrench" class="w-3.5 h-3.5 text-amber-500"></i> Field Troubleshooting Procedure
+                </span>
+                <span id="sop-error-badge" class="text-[10px] px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-mono font-medium">No active SOP</span>
+              </div>
+              <div id="sop-content-display" class="text-xs text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100 min-h-[120px] custom-scrollbar">
+                No active hardware SOP loaded. Inquire about POS hardware error codes (e.g. ERR-PAY-4001, ERR-DN-PRNT-24V) to retrieve verified runbooks.
+              </div>
+            </div>
+
+            <!-- Certified GCS Documentation Links -->
+            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+              <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                <i data-lucide="external-link" class="w-3.5 h-3.5 text-blue-500"></i> Certified Google Cloud Storage Manuals
+              </h3>
+              <div id="gcs-links-container" class="space-y-2">
+                <div class="text-xs text-slate-400 italic">No manual links in current session context.</div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- TAB 4: ADK Multi-Tool Trace -->
+          <div id="rtab-content-trace" class="space-y-4 hidden">
+            
+            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                  <i data-lucide="cpu" class="w-3.5 h-3.5 text-purple-500"></i> Dispatch Protocol & Decision Trace
+                </span>
+                <span id="dispatch-protocol-badge" class="text-[10px] px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 font-mono font-medium">IDLE</span>
+              </div>
+              <div id="trace-json-container" class="space-y-2 text-xs font-mono">
+                <div class="text-slate-400 p-3 bg-slate-900 rounded-lg text-slate-300">Awaiting multi-agent tool execution trace...</div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- VIEW 2: Interactive Architecture Canvas -->
+    <div id="view-arch" class="w-full h-full p-6 flex flex-col bg-slate-100 overflow-y-auto hidden custom-scrollbar">
+      <div class="max-w-6xl mx-auto w-full space-y-6">
+        
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="font-bold text-lg text-slate-900">Cymbal Retail Operations Platform Architecture</h2>
+              <p class="text-xs text-slate-500">Tri-Gateway Multi-Agent Coordination built on Google ADK 2.0 & BigQuery Agent Analytics</p>
+            </div>
+            <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold border border-blue-200">Cloud Next 2026 Reference</span>
+          </div>
+
+          <!-- Architecture Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            
+            <!-- Gateway 1 -->
+            <div class="p-4 rounded-xl bg-gradient-to-b from-blue-50 to-white border border-blue-200 shadow-2xs">
+              <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center mb-3">
+                <i data-lucide="database" class="w-4 h-4"></i>
+              </div>
+              <h3 class="font-bold text-sm text-slate-900 mb-1">BigQuery Conversational Agent</h3>
+              <p class="text-xs text-slate-600 mb-3 leading-relaxed">
+                Direct natural-language to GoogleSQL transformation via BigQuery Conversational Data Agent API (<code class="text-[11px]">go/bqca</code>). Seamlessly queries structured Gold marts and federated AWS S3 tables without code changes.
+              </p>
+              <div class="text-[10px] font-mono bg-blue-100/60 text-blue-800 p-2 rounded border border-blue-200">
+                Tool: cymbal_analytics_tool<br>
+                Mode: Relational NL2SQL
+              </div>
+            </div>
+
+            <!-- Gateway 2 -->
+            <div class="p-4 rounded-xl bg-gradient-to-b from-amber-50 to-white border border-amber-200 shadow-2xs">
+              <div class="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center mb-3">
+                <i data-lucide="book-open" class="w-4 h-4"></i>
+              </div>
+              <h3 class="font-bold text-sm text-slate-900 mb-1">POS Runbook Vector RAG</h3>
+              <p class="text-xs text-slate-600 mb-3 leading-relaxed">
+                Vector similarity search with adjacent chunk stitching over 368 POS hardware manuals (<code class="text-[11px]">text-embedding-005</code>). Features certified out-of-domain refusal and clickable GCS HTTPS links.
+              </p>
+              <div class="text-[10px] font-mono bg-amber-100/60 text-amber-800 p-2 rounded border border-amber-200">
+                Tool: pos_troubleshooting_rag_tool<br>
+                Threshold: Cosine &gt;= 0.70
+              </div>
+            </div>
+
+            <!-- Gateway 3 -->
+            <div class="p-4 rounded-xl bg-gradient-to-b from-purple-50 to-white border border-purple-200 shadow-2xs">
+              <div class="w-8 h-8 rounded-lg bg-purple-600 text-white flex items-center justify-center mb-3">
+                <i data-lucide="activity" class="w-4 h-4"></i>
+              </div>
+              <h3 class="font-bold text-sm text-slate-900 mb-1">Cloud Bigtable Live Telemetry</h3>
+              <p class="text-xs text-slate-600 mb-3 leading-relaxed">
+                Sub-second 1-hour rolling metrics and anomaly risk scores from <code class="text-[11px]">operations-db:cashier_realtime_alerts</code> via Cloud Run MCP microservice gateway (<code class="text-[11px]">mcp-toolbox-bigtable</code>).
+              </p>
+              <div class="text-[10px] font-mono bg-purple-100/60 text-purple-800 p-2 rounded border border-purple-200">
+                Tool: read_cashier_realtime_alerts<br>
+                Key: STORE_XXX#CASH_XXXX
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Dispatch Protocols Breakdown -->
+          <div class="border-t border-slate-200 pt-4">
+            <h4 class="font-bold text-xs text-slate-800 uppercase tracking-wide mb-3">Orchestration & Dispatch Protocols</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-slate-600">
+              <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <div class="font-semibold text-slate-900 mb-1">1. Single-Tool Dispatch</div>
+                Direct hardware SOP inquiries or direct sales analytics routed cleanly to their respective specialist tool.
+              </div>
+              <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <div class="font-semibold text-slate-900 mb-1">2. Parallel Turn-1 Dispatch</div>
+                Concurrently queries Bigtable live telemetry and BigQuery 7-day historical baseline in Turn 1 without asking for store confirmation.
+              </div>
+              <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <div class="font-semibold text-slate-900 mb-1">3. Sequential Multi-Turn Dispatch</div>
+                First identifies top promo abuse offenders in GCP BigQuery, then retrieves checkout logs from federated AWS S3 for the top offender.
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- VIEW 3: Operational Test Matrix -->
+    <div id="view-matrix" class="w-full h-full p-6 flex flex-col bg-slate-100 overflow-y-auto hidden custom-scrollbar">
+      <div class="max-w-6xl mx-auto w-full space-y-6">
+        
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="font-bold text-lg text-slate-900">Operational Verification Test Matrix</h2>
+              <p class="text-xs text-slate-500">Live evaluation of the 7 core operational scenarios specified in the SDD</p>
+            </div>
+            <button onclick="runAllMatrixTests()" id="run-all-tests-btn" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs flex items-center gap-1.5 transition">
+              <i data-lucide="play" class="w-3.5 h-3.5"></i> Run All 7 Scenarios
+            </button>
+          </div>
+
+          <!-- Matrix Table -->
+          <div class="overflow-x-auto border border-slate-200 rounded-xl">
+            <table class="w-full text-left text-xs text-slate-700">
+              <thead class="bg-slate-100 text-slate-600 font-semibold uppercase tracking-wider">
+                <tr>
+                  <th class="p-3">Scenario ID</th>
+                  <th class="p-3">Operational Domain</th>
+                  <th class="p-3">Target Gateway & Dispatch</th>
+                  <th class="p-3">Success Criteria</th>
+                  <th class="p-3 text-center">Status</th>
+                  <th class="p-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="matrix-table-body" class="divide-y divide-slate-100">
+                <!-- Dynamically injected via app.js -->
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Script logic -->
+  <script src="/studio/app.js"></script>
+</body>
+</html>
