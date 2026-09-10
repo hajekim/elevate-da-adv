@@ -21,6 +21,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Copy application source code
 COPY app/ ./app/
+COPY web/ ./web/
 COPY agents-cli-manifest.yaml .
 COPY AGENTS.md .
 
