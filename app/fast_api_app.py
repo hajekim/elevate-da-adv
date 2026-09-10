@@ -232,14 +232,14 @@ async def studio_chat_endpoint(req: StudioChatRequest) -> dict[str, Any]:
 
     # Extract GCS Links
     gcs_links = []
-    for link in re.findall(r"(https?://storage\.cloud\.google\.com/[^\s\)\"']+)", final_text):
-        if link not in gcs_links:
-            gcs_links.append(link)
+    raw_candidates = re.findall(r"(https?://storage\.cloud\.google\.com/[^\s\)\"'\\]+)", final_text)
     for tr in tool_responses:
         resp_str = str(tr.get("response", ""))
-        for link in re.findall(r"(https?://storage\.cloud\.google\.com/[^\s\)\"']+)", resp_str):
-            if link not in gcs_links:
-                gcs_links.append(link)
+        raw_candidates.extend(re.findall(r"(https?://storage\.cloud\.google\.com/[^\s\)\"'\\]+)", resp_str))
+    for link in raw_candidates:
+        clean_link = link.split("\\")[0].strip()
+        if clean_link and clean_link not in gcs_links:
+            gcs_links.append(clean_link)
 
     # Extract SOP Data
     sop_data = ""
