@@ -243,25 +243,72 @@
 
             <!-- Target Data Layer Card -->
             <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
-              <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                <i data-lucide="layers" class="w-3.5 h-3.5 text-indigo-500"></i> Grounded Schemas & Tables
-              </h3>
-              <div id="tables-list" class="grid grid-cols-2 gap-2 text-xs">
-                <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
-                  <div class="font-mono font-semibold text-slate-800 text-[11px]">pos_transactions_gold</div>
-                  <div class="text-[10px] text-slate-500">Curated Gold Sales & Line Items</div>
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                  <i data-lucide="layers" class="w-3.5 h-3.5 text-indigo-500"></i> Grounded Enterprise Data Assets (8)
+                </h3>
+                <span class="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-mono font-medium border border-indigo-200">3 Gateways</span>
+              </div>
+
+              <!-- Gateway 1: BQ Conversational Analytics (6 Tables) -->
+              <div class="mb-3">
+                <div class="flex items-center gap-1.5 text-[11px] font-semibold text-blue-700 mb-1.5">
+                  <i data-lucide="database" class="w-3 h-3 text-blue-600"></i>
+                  <span>1. BigQuery Conversational Agent (Relational NL2SQL - 6 Tables)</span>
                 </div>
-                <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
-                  <div class="font-mono font-semibold text-slate-800 text-[11px]">pos_anomaly_alerts</div>
-                  <div class="text-[10px] text-slate-500">BigQuery Continuous Queries Sinks</div>
+                <div id="tables-list" class="grid grid-cols-2 gap-1.5 text-xs">
+                  <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                    <div class="font-mono font-semibold text-slate-800 text-[10px]">pos_transactions_gold</div>
+                    <div class="text-[9px] text-slate-500">Intraday POS Sales &amp; Items</div>
+                  </div>
+                  <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                    <div class="font-mono font-semibold text-slate-800 text-[10px]">pos_anomaly_alerts</div>
+                    <div class="text-[9px] text-slate-500">Continuous Queries Alert Sink</div>
+                  </div>
+                  <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                    <div class="font-mono font-semibold text-slate-800 text-[10px]">gold_inventory_reconciliation_ledger</div>
+                    <div class="text-[9px] text-slate-500">Store Inventory &amp; Stockout Risk</div>
+                  </div>
+                  <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                    <div class="font-mono font-semibold text-slate-800 text-[10px]">historical_transactional_data</div>
+                    <div class="text-[9px] text-slate-500">Customer Purchases &amp; Items Array</div>
+                  </div>
+                  <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                    <div class="font-mono font-semibold text-slate-800 text-[10px]">warranty_generic_sections_extracted</div>
+                    <div class="text-[9px] text-slate-500">AI-Extracted Warranty Policies</div>
+                  </div>
+                  <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                    <div class="font-mono font-semibold text-slate-800 text-[10px]">silver_pos_transactions</div>
+                    <div class="text-[9px] text-slate-500">Federated AWS S3 Omni Table</div>
+                  </div>
                 </div>
-                <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
-                  <div class="font-mono font-semibold text-slate-800 text-[11px]">silver_pos_transactions</div>
-                  <div class="text-[10px] text-slate-500">Federated AWS S3 Omni Table</div>
+              </div>
+
+              <!-- Gateway 2: POS Runbook Vector RAG (1 Table) -->
+              <div class="mb-3">
+                <div class="flex items-center gap-1.5 text-[11px] font-semibold text-amber-700 mb-1.5">
+                  <i data-lucide="book-open" class="w-3 h-3 text-amber-600"></i>
+                  <span>2. POS Hardware Manual Vector RAG (1 Table)</span>
                 </div>
-                <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
-                  <div class="font-mono font-semibold text-slate-800 text-[11px]">pos_manual_chunk_embeddings</div>
-                  <div class="text-[10px] text-slate-500">368 BigQuery Vector Embeddings</div>
+                <div class="grid grid-cols-1 gap-1.5 text-xs">
+                  <div class="p-2 rounded-lg bg-amber-50/50 border border-amber-200">
+                    <div class="font-mono font-semibold text-slate-800 text-[10px]">cymbal_gold.pos_manual_chunk_embeddings</div>
+                    <div class="text-[9px] text-slate-600">368 BigQuery Vector Embeddings (Cosine &gt;= 0.70 &amp; Adjacent Context Stitching N-1~N+1)</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Gateway 3: Cloud Bigtable Telemetry (1 Table) -->
+              <div>
+                <div class="flex items-center gap-1.5 text-[11px] font-semibold text-purple-700 mb-1.5">
+                  <i data-lucide="activity" class="w-3 h-3 text-purple-600"></i>
+                  <span>3. Cloud Bigtable Sub-second Telemetry (1 Table)</span>
+                </div>
+                <div class="grid grid-cols-1 gap-1.5 text-xs">
+                  <div class="p-2 rounded-lg bg-purple-50/50 border border-purple-200">
+                    <div class="font-mono font-semibold text-slate-800 text-[10px]">operations-db : cashier_realtime_alerts</div>
+                    <div class="text-[9px] text-slate-600">Sub-second 1h Rolling Metrics &amp; Audit Risk Flags (Row Key: STORE_XXX#CASH_XXXX)</div>
+                  </div>
                 </div>
               </div>
             </div>
