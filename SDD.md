@@ -229,10 +229,11 @@ sequenceDiagram
     User->>ADK: "ERR-PAY-4001 핀패드 프리징 시 조치 절차는?" (UC-1.1)
     Note over ADK: Intent Classification -> Unstructured Hardware RAG
     ADK->>RAG: search_pos_manual(query="ERR-PAY-4001")
-    RAG->>BQ: VECTOR_SEARCH(TABLE pos_manual_embeddings, distance_type => 'COSINE', top_k => 2)
+    RAG->>BQ: VECTOR_SEARCH(TABLE pos_manual_chunk_embeddings, distance_type => 'COSINE', top_k => 5)
     Note over BQ: Calibrated Rule: distance = 1 - similarity.<br/>Relevance >= 0.70 requires distance <= 0.30
     alt Matched Chunks Found (distance <= 0.30)
-        BQ-->>RAG: Return Top Chunks (distance = 0.18, Page 12, GCS URI)
+        Note over RAG,BQ: Adjacent Context Window Stitching (Fetch chunk_index N-1 to N+1)
+        BQ-->>RAG: Return Stitched Context (~1,300 chars, Page/Section, GCS URI)
         RAG-->>ADK: Structured Manual SOP + Clickable GCS URL Link
         ADK-->>User: 단계별 조치 SOP 안내 및 클릭 가능한 원본 매뉴얼 링크 응답
     else Unmatched or Low Similarity (distance > 0.30)
@@ -398,9 +399,10 @@ sequenceDiagram
        └── store_pos_manual_generic/ (6 PDFs)
               │
               ▼ (Object Table & Vector Indexing)
-[BigQuery: module1_unstructureddata]
-       ├── pos_manual_generic_pdfs_objects & warranty_generic_pdfs_objects
-       └── pos_manual_embeddings (768-dim text-embedding-005, Cosine Distance Index)
+[BigQuery: module1_unstructureddata & cymbal_gold]
+       ├── pos_manual_generic_pdfs_objects & warranty_generic_pdfs_objects (Object Tables)
+       ├── pos_manual_generic_sections_extracted (Gemini Multimodal JSON Extracted)
+       └── pos_manual_chunk_embeddings (500ch window / 100ch overlap, 768-dim text-embedding-005, Cosine Distance Index)
 
 [Real-Time Cache: Cloud Bigtable operations-db]
        └── Table: cashier_realtime_alerts
@@ -508,10 +510,13 @@ sequenceDiagram
    - 비정형/파손된 JSON 이벤트는 Pub/Sub Subscription에 구성된 Dead Letter Topic(`pos-transactions-dlq`, `max_delivery_attempts = 5`)으로 자동 격리하여 파이프라인 정지 방지.
    - Cloud Dataflow 스트리밍 파이프라인(`cashier_abuse_detector.py`)이 1시간 슬라이딩 윈도우(5분 슬라이드)를 적용하여 캐셔별 할인 무효화 빈도 집계.
    - Vertex AI 엔드포인트(`cashier-abuse-endpoint`, P95 <50ms)로 인플라이트 스코어링을 수행하고 점수가 0.75를 초과하는 경우 Cloud Bigtable 캐시와 BigQuery `cymbal_gold.pos_anomaly_alerts` 테이블로 동시 출력.
-2. 비정형 문서 벡터 라이프사이클 및 거리 캘리브레이션:
-   - GCS 버킷에 PDF 업로드 시 BigQuery Object Table이 메타데이터를 자동 갱신.
-   - `AI.GENERATE_TABLE` 및 `AI.EMBED STORED`를 통해 청크 텍스트 추출 및 `text-embedding-005` 768차원 벡터 임베딩 생성.
-   - BigQuery `VECTOR_SEARCH`는 코사인 거리(`distance = 1 - cosine_similarity`)를 반환하므로, 요구사항의 유사도 0.70 기준은 `distance <= 0.30` 조건으로 정확히 캘리브레이션되어 실행됨.
+2. 비정형 문서 벡터 라이프사이클 및 슬라이딩 윈도우 청킹 (Re-chunking & Stitching):
+   - GCS 버킷에 PDF 업로드 시 BigQuery Object Table(`pos_manual_generic_pdfs_objects`)이 메타데이터를 자동 갱신.
+   - `AI.GENERATE` + `SAFE.PARSE_JSON` 패턴으로 토큰 잘림 없이 대용량 기술 매뉴얼을 완전 추출(`pos_manual_generic_sections_extracted`).
+   - BigQuery 표준 SQL의 `UNNEST(GENERATE_ARRAY(1, LENGTH, 400))`와 `SUBSTR(..., offset_pos, 500)` 슬라이딩 윈도우를 통해 500자 크기 / 100자 오버랩 구조로 원자적 재청킹 수행.
+   - 메타데이터 프리픽스(`[document_title]\n`)를 결합하고 Vertex AI `text-embedding-005` 768차원 모델(`pos_text_embedding_model`, `task_type='RETRIEVAL_DOCUMENT'`)로 임베딩하여 `pos_manual_chunk_embeddings`에 적재 (총 368개 청크).
+   - BigQuery `VECTOR_SEARCH`는 코사인 거리(`distance = 1 - cosine_similarity`)를 반환하므로, 요구사항의 유사도 0.70 기준은 `distance <= 0.30` 조건으로 정확히 캘리브레이션되어 실행됨 (미달 시 공인 거절 프로토콜 발동).
+   - 런타임 검색 툴(`pos_troubleshooting_rag_tool`)에서 상위 청크 식별 후 동일 문서의 인접 3개 청크(`chunk_index BETWEEN N-1 AND N+1`)를 동적 결합(Adjacent Context Window Stitching)하여 경계 절단 없는 약 1,300자의 완결된 SOP와 클릭 가능한 GCS HTTPS URL을 반환.
 
 ## 4.3. Identity & Access Control
 
